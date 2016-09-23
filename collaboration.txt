@@ -12,6 +12,8 @@ present. Created printstack function
 Brian Nguyen:
 Aided in writing functions, aided in conceptually understanding what 
 functions are doing what. created lots of the math functions.
+Fixed few issues with output. 
+Added a personal take on the best whitespace.
 
 Heather Connors:
 Helped others get the code conceptually, found bugs and fixed many off 
