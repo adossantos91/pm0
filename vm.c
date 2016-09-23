@@ -93,7 +93,7 @@ void main(int argc, char *argv[]){
 		//if we use STO or CAL, the level must be printed out differntly.
 		if (ir[i].op == 2 || ir[i].op == 9) {
 			printf("%3d%5s\n",i, instructionWord, ir[i].m);
-		} else if (ir[i].op == 4 || ir[i].op == 5 ){
+		} else if (ir[i].op == 3 || ir[i].op == 4 || ir[i].op == 5 ){
 			printf("%3d%5s%5d%5d\n",i, instructionWord, ir[i].l,ir[i].m);
 		} else {
 			printf("%3d%5s%10d\n",i, instructionWord, ir[i].m);
@@ -105,7 +105,7 @@ void main(int argc, char *argv[]){
 
 
 /*
- *
+ *cur_instr.
  *
  * The next portion outputs the remaining contents by doing the following in a loop:
  *
@@ -121,18 +121,21 @@ void main(int argc, char *argv[]){
  	printf("%24s%5s%5s%8s\n", "pc","bp","sp","stack");
 	printf("%24d%5d%5d\n", pc, bp, sp);
 	while(bp>0 && halt != 1){
+
 		if(pc < numofinstructions){
 
 			fetch();
-			if (cur_instr.op == 5 || cur_instr.op == 4) {
+			if (ir[pc-1].op == 5 || ir[pc-1].op == 4 ||ir[pc-1].op == 3) {
 				printf("%3d%5s%5d%5d", pc-1, opname(ir[pc-1]), ir[pc-1].l, ir[pc-1].m);
-			} else if (cur_instr.op == 2 || cur_instr.op == 9){
+			} else if (ir[pc-1].op == 2 || ir[pc-1].op == 9){
 				printf("%3d%5s%10s", pc-1, opname(ir[pc-1]), " ");
 			} else {
 				printf("%3d%5s%10d", pc-1, opname(ir[pc-1]), ir[pc-1].m);
 			}
 
+
 			choose();
+
 			printf("%6d%5d%5d   ", pc, bp, sp);
 			outputstack(outputfile);
 		} else {
@@ -170,25 +173,32 @@ int commandParser(char *filename){
 
 
     line = malloc(sizeof(char) * MAX_CODE_LENGTH + 1);
-    temp = fgets(line, MAX_CODE_LENGTH + 1, fp);
+    line = fgets(filename, MAX_CODE_LENGTH + 1, fp);
 
 
-	if (temp == NULL) {
+	if ( line == NULL) {
 		return -1;
 	}
 
-    while (line != NULL && temp != NULL) {
+    while (line != NULL) {
+		//printf("%s\n", token);
         token = strtok(line," ");
-		ir[numofinstructions].op = atoi(token);
+		if (token != NULL) {
+			ir[numofinstructions].op = atoi(token);
+		}
 
 		token = strtok(NULL," ");
-		ir[numofinstructions].l = atoi(token);
+		if (token != NULL) {
+			ir[numofinstructions].l = atoi(token);
+		}
 
 		token = strtok(NULL," ");
-		ir[numofinstructions].m = atoi(token);
+		if (token != NULL) {
+			ir[numofinstructions].m = atoi(token);
+		}
 
 
-		temp = fgets(line, MAX_CODE_LENGTH + 1, fp);
+		line = fgets(filename, MAX_CODE_LENGTH + 1, fp);
 		numofinstructions++;
     }
 
@@ -234,7 +244,9 @@ int base(int base, int L){
  *  initiates the appropriate function correlating to the appropriate op code.
  */
 void choose(){
+
     switch (cur_instr.op){
+
 
         case 1:
 			//printf("a\n");
@@ -242,7 +254,8 @@ void choose(){
             break;
 
         case 2:
-		//	printf("b\n");
+
+			//printf("b\n");
             opr();
             break;
 
@@ -277,7 +290,7 @@ void choose(){
             break;
 
         case 9:
-		//	printf("i\n");
+			//printf("i\n");
             sio();
             break;
 
@@ -323,6 +336,9 @@ void lit(){
  */
 void opr(){
 
+	pc--; //to fix pesky off by one, only when calling op
+
+	//ret
     if(cur_instr.m == 0){
         sp = bp - 1;
         bp = stack[sp + 3];
@@ -330,33 +346,41 @@ void opr(){
 
     }
 
-
+	//neg
     if(cur_instr.m == 1){
         stack[sp] = -stack[sp];
     }
 
+	//add
     if(cur_instr.m == 2){
+		sp = sp - 1;
         stack[sp] = stack[sp] + stack[sp + 1];
-        sp = sp - 1;
     }
 
+	//sub
     if(cur_instr.m == 3){
+		sp = sp - 1;
         stack[sp] = stack[sp] - stack[sp + 1];
-        sp = sp - 1;
+
     }
 
-
+	//mul
     if(cur_instr.m == 4){
+		sp = sp - 1;
         stack[sp] = stack[sp] * stack[sp + 1];
-        sp = sp - 1;
+
     }
 
+	//div
     if(cur_instr.m == 5){
+		sp = sp - 1; //this has to go before the divide statement below
         stack[sp] = stack[sp] / stack[sp + 1];
-        sp = sp - 1;
+
     }
 
+	//odd
     if(cur_instr.m == 6){
+		//printf("heres\n" );
         stack[sp] = stack[sp] % 2;
 
     }
@@ -400,7 +424,8 @@ void opr(){
     }
 
     if(cur_instr.m != 0)
-        pc++;
+
+		pc++;
 
 }
 
@@ -414,9 +439,8 @@ void opr(){
  *  performs the LOD operation as outlined in the homework
  */
 void lod(){
-    sp = sp + 1;
+    sp++;
     stack[sp] = stack[ base(bp, cur_instr.l) + cur_instr.m];
-    pc++;
 }
 
 
@@ -449,7 +473,7 @@ void cal(){
     stack[sp + 3] = bp; // dynamic link (DL)
     stack[sp + 4] = pc; // return address (RA)
     bp = sp + 1;
-    pc = cur_instr.m;
+    pc = ir[pc-1].m;
 
 
 }
@@ -512,19 +536,22 @@ void jpc(){
  */
 void sio(){
 
+
     if(cur_instr.m == 0){
         printf("\n\n\t Contents: %d", stack[sp]);
         sp = sp - 1;
     }
 
     if(cur_instr.m == 1){
-        scanf("\n\n\t Please enter value: %d", &stack[sp+1]);
-	sp++;
+		printf("\nPlease enter a value: " );
+        scanf("%d", &stack[sp+1]);
+		sp++;
     }
 
     if(cur_instr.m == 2){
         halt = 1;
     }
+
 
 }// end sio
 
@@ -545,67 +572,38 @@ char *opname(instruction op){
             break;
 
         case 2:
-            switch (op.l) {
-            	case 0:
-					return "RET";
-					break;
-
-				case 1:
-					return "NEG";
-					break;
-
-				case 2:
-					return "ADD";
-					break;
-
-				case 3:
-					return "SUB";
-					break;
-
-				case 4:
-					return "MUT";
-					break;
-
-				case 5:
-					return "DIV";
-					break;
-
-				case 6:
-					return "ODD";
-					break;
-
-				case 7:
-					return "MOD";
-					break;
-
-				case 8:
-					return "EQL";
-					break;
-
-				case 9:
-					return "NEQ";
-					break;
-
-				case 10:
-					return "LLS";
-					break;
-
-				case 11:
-					return "LEQ";
-					break;
-
-				case 12:
-					return "GTR";
-					break;
-
-				case 13:
-					return "GEQ";
-					break;
-
-				default:
-					return "HLT";
-					break;
-            }
+		//printf("aaaas %d aaaa\n",op.m);
+            if(op.m == 0){
+				return "RET";
+			} else if (op.m == 1){
+				return "NEG";
+			} else if (op.m == 2){
+				return "ADD";
+			} else if (op.m == 3){
+				return "SUB";
+			} else if (op.m == 4){
+				return "MUT";
+			} else if (op.m == 5){
+				return "DIV";
+			} else if (op.m == 6){
+				return "ODD";
+			} else if (op.m == 7){
+				return "MOD";
+			} else if (op.m == 8){
+				return "EQL";
+			} else if (op.m == 9){
+				return "NEQ";
+			} else if (op.m == 10){
+				return "LLS";
+			} else if (op.m == 11){
+				return "LEQ";
+			} else if (op.m == 12){
+				return "GTR";
+			} else if (op.m == 13){
+				return "GEQ";
+			} else {
+				return "HLT";
+			}
             break;
 
         case 3:
@@ -669,7 +667,7 @@ void outputstack(){
                 printf("| ");
                 bpCount--;
             }
-            printf("%-2d", stack[j]);
+            printf("%-4d", stack[j]);
         }
 	//fprintf(fileTrace,"\n");
 }

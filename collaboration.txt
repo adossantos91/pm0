@@ -5,14 +5,19 @@ Group 29
 -Ryan Hoeck
 
 Alexander Dossantos:
-
+Converted a lot of the pseudocode to actual code, outlined program 
+functions, tested against test cases and found areas where bugs were 
+present. Created printstack function
 
 Brian Nguyen:
-
+Aided in writing functions, aided in conceptually understanding what 
+functions are doing what. created lots of the math functions.
+Fixed few issues with output. 
+Added a personal take on the best whitespace.
 
 Heather Connors:
-
-
+Helped others get the code conceptually, found bugs and fixed many off 
+by one errors. Found good formatting for the print statements.
 
 Ryan Hoeck: 
 Cleaned up and formatted the output, created a function to read in the 
