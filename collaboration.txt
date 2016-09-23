@@ -5,7 +5,7 @@ Group 29
 -Ryan Hoeck
 
 Alexander Dossantos:
-Converted a lot of the pseudocode to actual code, outlined program 
+Converted a lot of the pseudocode to actual code, outlined/implemented program 
 functions, tested against test cases and found areas where bugs were 
 present. Created printstack function
 
