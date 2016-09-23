@@ -125,7 +125,7 @@ void main(int argc, char *argv[]){
 		if(pc < numofinstructions){
 
 			fetch();
-			if (ir[pc-1].op == 5 || ir[pc-1].op == 4) {
+			if (ir[pc-1].op == 5 || ir[pc-1].op == 4 ||ir[pc-1].op == 3) {
 				printf("%3d%5s%5d%5d", pc-1, opname(ir[pc-1]), ir[pc-1].l, ir[pc-1].m);
 			} else if (ir[pc-1].op == 2 || ir[pc-1].op == 9){
 				printf("%3d%5s%10s", pc-1, opname(ir[pc-1]), " ");
@@ -336,7 +336,9 @@ void lit(){
  */
 void opr(){
 
+	pc--; //to fix pesky off by one, only when calling op
 
+	//ret
     if(cur_instr.m == 0){
         sp = bp - 1;
         bp = stack[sp + 3];
@@ -344,32 +346,39 @@ void opr(){
 
     }
 
-
+	//neg
     if(cur_instr.m == 1){
         stack[sp] = -stack[sp];
     }
 
+	//add
     if(cur_instr.m == 2){
+		sp = sp - 1;
         stack[sp] = stack[sp] + stack[sp + 1];
-        sp = sp - 1;
     }
 
+	//sub
     if(cur_instr.m == 3){
+		sp = sp - 1;
         stack[sp] = stack[sp] - stack[sp + 1];
-        sp = sp - 1;
+
     }
 
-
+	//mul
     if(cur_instr.m == 4){
+		sp = sp - 1;
         stack[sp] = stack[sp] * stack[sp + 1];
-        sp = sp - 1;
+
     }
 
+	//div
     if(cur_instr.m == 5){
+		sp = sp - 1; //this has to go before the divide statement below
         stack[sp] = stack[sp] / stack[sp + 1];
-        sp = sp - 1;
+
     }
 
+	//odd
     if(cur_instr.m == 6){
 		//printf("heres\n" );
         stack[sp] = stack[sp] % 2;
@@ -415,7 +424,8 @@ void opr(){
     }
 
     if(cur_instr.m != 0)
-        pc++;
+
+		pc++;
 
 }
 
@@ -429,9 +439,8 @@ void opr(){
  *  performs the LOD operation as outlined in the homework
  */
 void lod(){
-    sp = sp + 1;
+    sp++;
     stack[sp] = stack[ base(bp, cur_instr.l) + cur_instr.m];
-    //pc++;
 }
 
 
@@ -464,7 +473,7 @@ void cal(){
     stack[sp + 3] = bp; // dynamic link (DL)
     stack[sp + 4] = pc; // return address (RA)
     bp = sp + 1;
-    pc = cur_instr.m;
+    pc = ir[pc-1].m;
 
 
 }
@@ -658,7 +667,7 @@ void outputstack(){
                 printf("| ");
                 bpCount--;
             }
-            printf("%-3d", stack[j]);
+            printf("%-4d", stack[j]);
         }
 	//fprintf(fileTrace,"\n");
 }
